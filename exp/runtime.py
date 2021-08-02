@@ -17,6 +17,10 @@ from sgk.sparse import ops
 # Disable TF2.
 tf1.disable_v2_behavior()
 
+
+# Earger TF2.
+tf.enable_eager_execution()
+
 REPS = 100
 
 BURN_ITERS = 10
@@ -26,11 +30,12 @@ def tensorflow_runtime(A, B, reps=REPS,burn_iters=BURN_ITERS):
 	Given the sparse matrix A and dense matrix B return the runtime of the
 	tf.sparse.sparse_dense_matmul function
 	"""
-	with tf.device("/GPU:0"):
-		lhs = tf.constant(A)
-		rhs = tf.constant(B)
-	times = []
 
+	with tf.device("/GPU:0"):
+		lhs = tf.convert_to_tensor(A)
+		rhs = tf.convert_to_tensor(B)
+	times = []
+	print(type(lhs))
 	for _ in range(burn_iters):
 		tf.matmul(lhs, rhs)
 
@@ -39,6 +44,8 @@ def tensorflow_runtime(A, B, reps=REPS,burn_iters=BURN_ITERS):
 		tf.matmul(lhs, rhs)
 		end = time.perf_counter()
 		times.append((end - start)*1000.0)
+	del lhs
+	del rhs
 	return np.mean(times)
 
 
@@ -56,6 +63,8 @@ def tensorflow_sparse_runtime(A, B, reps=REPS):
 		tf.sparse.sparse_dense_matmul(lhs, rhs)
 		end = time.perf_counter()
 		times.append((end - start)*1000.0)
+	del lhs
+	del rhs
 	return np.median(times)
 
 
@@ -71,8 +80,10 @@ def pytorch_runtime(A, B, reps=REPS):
 	t = benchmark.Timer(
     stmt='torch.mm(lhs, rhs)',
     globals={'lhs': rhs,'rhs':lhs})
-
-	return t.timeit(REPS).median*1000
+	result = t.timeit(REPS).median*1000
+	del lhs
+	del rhs
+	return result
 
 
 def pytorch_sparse_runtime(A, B, reps=REPS):
@@ -96,8 +107,12 @@ def pytorch_sparse_runtime(A, B, reps=REPS):
 	t = benchmark.Timer(
     stmt='torch.sparse.mm(lhs, rhs)',
     globals={'lhs': lhs,'rhs':rhs})
+	result = t.timeit(REPS).median*1000
 
-	return t.timeit(REPS).median*1000
+	del lhs
+	del rhs
+	del t
+	return result
 
 
 def sgk_sparse_runtime(A, B, reps=REPS,burn_iters= BURN_ITERS):
@@ -121,5 +136,6 @@ def sgk_sparse_runtime(A, B, reps=REPS,burn_iters= BURN_ITERS):
 			sess.run(output)
 			end = time.perf_counter()
 		times.append((end - start)*1000.0)
-
+	del lhs
+	del rhs
 	return np.median(times)

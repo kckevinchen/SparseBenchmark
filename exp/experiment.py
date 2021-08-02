@@ -41,7 +41,9 @@ def experiment(arg):
             plt.title("Sparse Kernel | Matrix Size: {}".format(dimension))
             plt.legend()
             plt.savefig(os.path.join(arg.output_path,"{}.png".format(dimension)))
+            plt.close()
             print("*"*40)
+            del sub_res
 
 
         
