@@ -29,8 +29,6 @@ def tensorflow_runtime(A, B, reps=REPS,burn_iters=BURN_ITERS):
 	with tf.device("/GPU:0"):
 		lhs = tf.constant(A)
 		rhs = tf.constant(B)
-	print(type(lhs))
-	print(lhs.device)
 	times = []
 
 	for _ in range(burn_iters):
@@ -38,7 +36,7 @@ def tensorflow_runtime(A, B, reps=REPS,burn_iters=BURN_ITERS):
 
 	for _ in range(reps):
 		start = time.perf_counter()
-		tf.matmul(lhs, rhs)
+		tf.raw_ops.MatMul(a=lhs, b=rhs)
 		end = time.perf_counter()
 		times.append((end - start)*1000.0)
 	del lhs
@@ -65,20 +63,21 @@ def tensorflow_sparse_runtime(A, B, reps=REPS):
 	return np.median(times)
 
 
+
 def pytorch_runtime(A, B, reps=REPS):
 	"""
 	Given the sparse matrix A and dense matrix B return the runtime of the
 	torch.mm function
 	"""
 	device = 'cuda'
-	lhs = torch.from_numpy(A).t().to(device=device)
-	rhs = torch.from_numpy(B).t().to(device=device)
+	lhs = torch.from_numpy(A).t()
+	rhs = torch.from_numpy(B).t()
 
 	
 	t = benchmark.Timer(
     stmt='torch.mm(lhs, rhs)',
     globals={'lhs': rhs,'rhs':lhs})
-	result = t.timeit(REPS).median*1000
+	result = t.timeit(reps).median*1000
 	del lhs
 	del rhs
 	return result
@@ -99,13 +98,13 @@ def pytorch_sparse_runtime(A, B, reps=REPS):
 	shape = A.shape
 
 	lhs = torch.sparse_coo_tensor(
-		i, v, torch.Size(shape)).to(device).coalesce()
+		i, v, torch.Size(shape)).coalesce().to(device)
 	rhs = torch.from_numpy(B).to(device=device)
 
 	t = benchmark.Timer(
     stmt='torch.sparse.mm(lhs, rhs)',
     globals={'lhs': lhs,'rhs':rhs})
-	result = t.timeit(REPS).median*1000
+	result = t.timeit(reps).median*1000
 	del lhs
 	del rhs
 	return result

@@ -28,7 +28,7 @@ def experiment(arg):
             sub_res = {}
             for f in tqdm(files):
                 f_path = os.path.join(subdir,f)
-                sparsity = float(f.split(".")[0])
+                sparsity = float(".".join(f.split(".")[:-1]))
                 A = mtx.load_from_mtx(f_path)
                 B =  np.random.randn(A.shape[1], batch_size).astype(np.float32)
                 for name, func in ALL_RUNTIME.items():
@@ -37,9 +37,11 @@ def experiment(arg):
             print("Generating graphs")    
             plt.figure(figsize=(16,9))
             for name,data in sub_res.items():
-                plt.plot(list(data.keys()),list(data.values()),label=name)
+                plt.scatter(list(data.keys()),list(data.values()),label=name)
             plt.title("Sparse Kernel | Matrix Size: {}".format(dimension))
             plt.legend()
+            plt.xlabel("Density")
+            plt.ylabel("Runtime (ms)")
             plt.savefig(os.path.join(arg.output_path,"{}.png".format(dimension)))
             plt.close()
             print("*"*40)
