@@ -70,8 +70,8 @@ def pytorch_runtime(A, B, reps=REPS):
 	torch.mm function
 	"""
 	device = 'cuda'
-	lhs = torch.from_numpy(A).t()
-	rhs = torch.from_numpy(B).t()
+	lhs = torch.from_numpy(A).t().to(device)
+	rhs = torch.from_numpy(B).t().to(device)
 
 	
 	t = benchmark.Timer(
