@@ -37,7 +37,7 @@ def experiment(arg):
             print("Generating graphs")    
             plt.figure(figsize=(16,9))
             for name,data in sub_res.items():
-                plt.scatter(list(data.keys()),list(data.values()),label=name)
+                plt.plot(list(data.keys()),list(data.values()),label=name)
             plt.title("Sparse Kernel | Matrix Size: {}".format(dimension))
             plt.legend()
             plt.xlabel("Density")
