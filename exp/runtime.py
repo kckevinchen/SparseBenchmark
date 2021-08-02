@@ -24,7 +24,7 @@ BURN_ITERS = 10
 def tensorflow_runtime(A, B, reps=REPS,burn_iters=BURN_ITERS):
 	"""
 	Given the sparse matrix A and dense matrix B return the runtime of the
-	tf.sparse.sparse_dense_matmul function
+	tf.matmul function
 	"""
 	with tf.device("/GPU:0"):
 		lhs = tf.constant(A)
@@ -66,12 +66,13 @@ def tensorflow_sparse_runtime(A, B, reps=REPS):
 def pytorch_runtime(A, B, reps=REPS):
 	"""
 	Given the sparse matrix A and dense matrix B return the runtime of the
-	cublas code (cpp code binded in python)
+	torch.mm function
 	"""
 	device = 'cuda'
 	lhs = torch.from_numpy(A).t().to(device=device)
 	rhs = torch.from_numpy(B).t().to(device=device)
 
+	
 	t = benchmark.Timer(
     stmt='torch.mm(lhs, rhs)',
     globals={'lhs': rhs,'rhs':lhs})
@@ -84,7 +85,7 @@ def pytorch_runtime(A, B, reps=REPS):
 def pytorch_sparse_runtime(A, B, reps=REPS):
 	"""
 	Given the sparse matrix A and dense matrix B return the runtime of the
-	cusparse code (cpp code binded in python)
+	torch.sparse.mm function
 	"""
 	device = 'cuda'
 	A = sparse.coo_matrix(A)
@@ -111,7 +112,8 @@ def pytorch_sparse_runtime(A, B, reps=REPS):
 def sgk_sparse_runtime(A, B, reps=REPS,burn_iters= BURN_ITERS):
 	"""
 	Given the sparse matrix A and dense matrix B return the runtime of the
-	cusparse code (cpp code binded in python)
+	sgk.spmm function
+	https://arxiv.org/abs/2006.10901
 	"""
 	lhs = sparse_matrix.SparseMatrix(
 		"lhs_{}".format(round(time.time() * 1000)), matrix=np.array(A))
