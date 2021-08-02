@@ -46,7 +46,7 @@ def experiment(arg):
             sub_res = {}
             for f in tqdm(files):
                 f_path = os.path.join(subdir,f)
-                sparsity = float(".".join(f.split(".")[:-1]))
+                sparsity = 1 - float(".".join(f.split(".")[:-1]))
                 A = mtx.load_from_mtx(f_path)
                 B =  np.random.randn(A.shape[1], batch_size).astype(np.float32)
                 for name, func in ALL_RUNTIME.items():
@@ -62,7 +62,7 @@ def experiment(arg):
                 # plt.plot(keys[idx],values[idx],label=name)
             plt.title("Sparse Kernel | Matrix Size: {}".format(dimension))
             plt.legend()
-            plt.xlabel("Density")
+            plt.xlabel("Sparsity")
             plt.ylabel("Runtime (ms)")
             plt.savefig(os.path.join(arg.output_path,"{}.png".format(dimension)))
             plt.close()
