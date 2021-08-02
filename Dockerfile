@@ -17,7 +17,7 @@ RUN DEBIAN_FRONTEND="noninteractive" apt-get install -y \
 # Install TensorFlow and pytorch.
 RUN DEBIAN_FRONTEND="noninteractive" apt-get install -y python3-dev python3-pip
 RUN pip3 install --upgrade pip && pip install --upgrade tensorflow_gpu
-RUN pip install --upgrade tensor2tensor
+RUN pip install --upgrade tensor2tensor && pip install tqdm
 RUN pip3 install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
 
 #Rename python

@@ -29,6 +29,8 @@ def tensorflow_runtime(A, B, reps=REPS,burn_iters=BURN_ITERS):
 	with tf.device("/GPU:0"):
 		lhs = tf.constant(A)
 		rhs = tf.constant(B)
+	print(type(lhs))
+	print(lhs.device)
 	times = []
 
 	for _ in range(burn_iters):
