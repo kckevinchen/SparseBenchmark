@@ -20,6 +20,9 @@ RUN pip3 install --upgrade pip && pip install --upgrade tensorflow_gpu
 RUN pip install --upgrade tensor2tensor && pip install tqdm
 RUN pip3 install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
 
+#Install Pybind
+RUN pip install pybind11 && pip install "pybind11[global]"
+
 #Rename python
 RUN apt-get install python-is-python3
 
@@ -58,6 +61,12 @@ ENV LD_LIBRARY_PATH="/usr/local/sputnik/lib:${LD_LIBRARY_PATH}"
 
 #Setup cudnn
 RUN sh /mount/sgk/cudnn.sh
+
+#Setup Cusparse/Cublas
+RUN mkdir -p /mount/_c
+COPY ./_c /mount/_c
+WORKDIR /mount/_c
+RUN make all
 
 # Set the working directory.
 WORKDIR /mount
