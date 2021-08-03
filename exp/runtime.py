@@ -14,6 +14,8 @@ from sgk.sparse import sparse_matrix
 from sgk.sparse import ops
 
 
+from _c.cpp_lib import *
+
 # Disable TF2.
 tf1.disable_v2_behavior()
 
@@ -116,8 +118,9 @@ def sgk_sparse_runtime(A, B, reps=REPS,burn_iters= BURN_ITERS):
 	sgk.spmm function
 	https://arxiv.org/abs/2006.10901
 	"""
+	tf1.reset_default_graph()
 	lhs = sparse_matrix.SparseMatrix(
-		"lhs_{}".format(round(time.time() * 1000)), matrix=np.array(A))
+		"lhs", matrix=A)
 	rhs = tf1.constant(B, dtype=tf1.float32)
 	output = ops.spmm(lhs, rhs)
 
@@ -136,3 +139,56 @@ def sgk_sparse_runtime(A, B, reps=REPS,burn_iters= BURN_ITERS):
 	del rhs
 
 	return np.median(times)
+
+
+
+
+def cublas_runtime(A, B, reps=REPS,burn_iters= BURN_ITERS):
+	"""
+	Given the sparse matrix A and dense matrix B return the runtime of the 
+	cublas code (cpp code binded in python)
+	"""
+	m, k = A.shape
+	n = B.shape[1]
+	times = []
+
+	for _ in range(burn_iters):
+		cuBLAS(m, n, k, A.reshape(-1),B.reshape(-1))
+
+	for _ in range(reps):
+		times.append(cuBLAS(m, n, k, A.reshape(-1),B.reshape(-1)))
+	return np.median(times)*1e-6
+
+def cusparse_runtime(A, B, reps=REPS,burn_iters= BURN_ITERS):
+	"""
+	Given the sparse matrix A and dense matrix B return the runtime of the 
+	cusparse code (cpp code binded in python)
+	"""
+	sparse_A = sparse.csr_matrix(A)
+	m, k = A.shape
+	n = B.shape[1]
+	times = []
+	for _ in range(burn_iters):
+		cuSPARSE(m,n,k, sparse_A.nnz, sparse_A.indptr, sparse_A.indices, sparse_A.data, B.flatten())
+
+	for _ in range(reps):
+		times.append(cuSPARSE(m,n,k, sparse_A.nnz, sparse_A.indptr, sparse_A.indices, sparse_A.data, B.flatten()))
+	return np.median(times)*1e-6
+
+
+
+if __name__ == "__main__":
+
+	def gen_test_input(m,n,k,sparsity):
+		"""
+		return A as a sparse matrix and B as a dense
+		A is of shape (m, k)
+		B is of shape (k, n)
+		"""
+		sparse_A = sparse.random(m, k, 1 - sparsity, format = 'csr', dtype=np.float32).toarray()
+		B = np.random.randn(k, n).astype(np.float32)
+		return sparse_A, B
+	x = 400
+	sparsity = 0.4
+	A, B = gen_test_input(x,x,x,sparsity)
+	print(cublas_runtime(A,B))

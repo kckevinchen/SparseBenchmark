@@ -9,5 +9,5 @@ def load_from_mtx(mtx_path):
     mask[i] == 1 --> Keep parameter
     
     """
-    matrix = sio.mmread(mtx_path).astype(np.float32).todense()
+    matrix = sio.mmread(mtx_path).astype(np.float32).toarray()
     return matrix

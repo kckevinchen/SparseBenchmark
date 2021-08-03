@@ -41,8 +41,8 @@ namespace py = pybind11;
 
 float test_cusparse_gemm(int m, int n, int k, int A_nnz, py::array_t<int> A_csr_offsets, 
 	py::array_t<int> A_csr_columns, py::array_t<float>A_csr_values, py::array_t<float> arr_B) {
-	typedef std::chrono::high_resolution_clock Clock;
-	typedef std::chrono::milliseconds milliseconds;
+	typedef std::chrono::steady_clock Clock;
+	typedef std::chrono::nanoseconds nanoseconds;
     
 	float alpha = 1.0f;
     float beta = 0.0f;
@@ -63,7 +63,7 @@ float test_cusparse_gemm(int m, int n, int k, int A_nnz, py::array_t<int> A_csr_
     int *dA_csr_offsets, *dA_csr_columns;
     float *dA_csr_values, *dB_values, *dC_values;
 	int A_num_rows = m;
-	int A_num_cols = n;
+	int A_num_cols = k;
 	int B_num_rows = k;
 	int B_num_cols = n;
 
@@ -141,7 +141,7 @@ float test_cusparse_gemm(int m, int n, int k, int A_nnz, py::array_t<int> A_csr_
     CHECK_CUDA(cudaFree(dB_values))
     CHECK_CUDA(cudaFree(dC_values))
 	//get the time
-	milliseconds ms = std::chrono::duration_cast<milliseconds> (end-start);
+	nanoseconds ms = std::chrono::duration_cast<nanoseconds> (end-start);
 	return ms.count();
 }
 
@@ -149,8 +149,8 @@ float test_cublas_sgemm(int m, int n, int k, py::array_t<float> arr_A, py::array
 // float test_cublas_sgemm(int m, int n, int k, float * arr_A, float * arr_B) {
 	//remember the mtx is col based!!!
 	//init the variables	
-	typedef std::chrono::high_resolution_clock Clock;
-	typedef std::chrono::milliseconds milliseconds;
+	typedef std::chrono::steady_clock Clock;
+	typedef std::chrono::nanoseconds nanoseconds;
 	float *A, *B;
 	float *d_A, *d_B, *d_C;
 #ifdef DEBUG
@@ -202,7 +202,7 @@ float test_cublas_sgemm(int m, int n, int k, py::array_t<float> arr_A, py::array
 
 	cublasDestroy(handle);
 
-	milliseconds ms = std::chrono::duration_cast<milliseconds> (end-start);
+	nanoseconds ms = std::chrono::duration_cast<nanoseconds> (end-start);
 
 #ifdef DEBUG
 	fprintf(stderr, "printing the multiplication result col by col, matrix is %d X %d\n\n", m, n);
@@ -219,12 +219,3 @@ PYBIND11_MODULE(cpp_lib, m){
 	m.def("cuBLAS", &test_cublas_sgemm, "the function returning the RT of cuBLAS");
 	m.def("cuSPARSE", &test_cusparse_gemm, "the function returning the RT of cuSPARSE");
 }
-
-// int main(){
-// 	float m = 2.0;
-// 	float n = 2.0;
-// 	float k = 2.0;
-// 	float arr_A[] = {1,2,3,4};
-// 	float arr_B[] = {1,0,0,1};
-// 	test_cublas_sgemm(m,n,k,arr_A, arr_B);	
-// }
