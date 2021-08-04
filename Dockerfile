@@ -1,6 +1,7 @@
 FROM nvidia/cuda:11.4.0-devel-ubuntu20.04
 #10.1-cudnn7-devel-ubuntu18.04
 
+
 ENV DCUDA_ARCHS=""86;86""
 
 # Install tools and dependencies.
@@ -25,6 +26,7 @@ RUN pip install pybind11 && pip install "pybind11[global]"
 
 #Rename python
 RUN apt-get install python-is-python3
+
 
 # Install CMake.
 RUN DEBIAN_FRONTEND="noninteractive"  apt-get install -y software-properties-common && \

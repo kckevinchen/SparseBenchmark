@@ -16,9 +16,10 @@ ALL_RUNTIME = {
     "pytorch_sparse":runtime.pytorch_sparse_runtime,
     "tensorflow":runtime.tensorflow_runtime,
     "tensorflow_sparse":runtime.tensorflow_sparse_runtime,
-    "sgk_sparse":runtime.sgk_sparse_runtime,
+    "sgk_tf":runtime.sgk_sparse_runtime,
     "cuBLAS":runtime.cublas_runtime,
-    "cuSPARSE":runtime.cusparse_runtime
+    "cuSPARSE":runtime.cusparse_runtime,
+    "sgk_op" :runtime.sgk_op_runtime
 }
 def generate_line(keys,values,name):
     keys = np.array(list(keys))
