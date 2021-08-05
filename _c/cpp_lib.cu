@@ -102,6 +102,7 @@ float test_cusparse_gemm(int m, int n, int k, int A_nnz, py::array_t<int> A_csr_
     CHECK_CUSPARSE(cusparseCreate(&handle))
 
     //SpGEMM
+    cudaDeviceSynchronize();
     Clock::time_point start = Clock::now();
     CHECK_CUSPARSE(cusparseSpMM_bufferSize(
         handle,
@@ -188,6 +189,7 @@ float test_cublas_sgemm(int m, int n, int k, py::array_t<float> arr_A, py::array
     CHECK_CUDA(cudaMemcpy(d_B, B, sizeof(float) * n * k, cudaMemcpyHostToDevice))
 
     const float a = 1.0, b = 0.0;
+    cudaDeviceSynchronize();
     Clock::time_point start = Clock::now();
 
     cublasStatus_t ret = cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &a, d_A, m, d_B, k, &b, d_C, m);
@@ -262,7 +264,8 @@ float test_sgk_spmm(int m, int n, int k, int nonzeros, py::array_t<float> A_valu
     CHECK_CUDA(cudaStreamCreate(&handle))
 
     float* bias = nullptr;
-
+    
+    cudaDeviceSynchronize();
     Clock::time_point start = Clock::now();
     CHECK_CUDA(sputnik::CudaSpmmBiasRelu(m, k, n, nonzeros, row_indices, values,
                                         row_offsets, column_indices, dense_matrix,

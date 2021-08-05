@@ -10,7 +10,8 @@ from scipy.interpolate import make_interp_spline, BSpline
 
 BATCH_SIZE = 128
 
-SMOOTH = 0.3
+SMOOTH = 2
+SMOOTH_INT = 100
 ALL_RUNTIME = {
     "pytorch":runtime.pytorch_runtime,
     "pytorch_sparse":runtime.pytorch_sparse_runtime,
@@ -31,6 +32,7 @@ def generate_line(keys,values,name):
 
     total_len = np.prod(x.shape)
     xnew = np.linspace(x.min(), x.max(), round(total_len*SMOOTH)) 
+    # xnew = np.linspace(x.min(), x.max(), SMOOTH_INT) 
 
     spl = make_interp_spline(x, y, k=3)  # type: BSpline
     power_smooth = spl(xnew)

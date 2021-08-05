@@ -48,10 +48,10 @@ def tensorflow_runtime(A, B, reps=REPS, burn_iters=BURN_ITERS):
         times.append((end - start)*1000.0)
     del lhs
     del rhs
-    return np.mean(times)
+    return np.median(times)
 
 
-def tensorflow_sparse_runtime(A, B, reps=REPS):
+def tensorflow_sparse_runtime(A, B, reps=REPS, burn_iters=BURN_ITERS):
     """
     Given the sparse matrix A and dense matrix B return the runtime of the
     tf.sparse.sparse_dense_matmul function
@@ -60,6 +60,9 @@ def tensorflow_sparse_runtime(A, B, reps=REPS):
         lhs = tf.sparse.from_dense(A)
         rhs = tf.constant(B)
     times = []
+    for _ in range(burn_iters):
+        tf.sparse.sparse_dense_matmul(lhs, rhs)
+
     for _ in range(reps):
         start = time.perf_counter()
         tf.sparse.sparse_dense_matmul(lhs, rhs)
@@ -70,7 +73,7 @@ def tensorflow_sparse_runtime(A, B, reps=REPS):
     return np.median(times)
 
 
-def pytorch_runtime(A, B, reps=REPS):
+def pytorch_runtime(A, B, reps=REPS, burn_iters=BURN_ITERS):
     """
     Given the sparse matrix A and dense matrix B return the runtime of the
     torch.mm function
@@ -79,16 +82,30 @@ def pytorch_runtime(A, B, reps=REPS):
     lhs = torch.from_numpy(A).t().to(device)
     rhs = torch.from_numpy(B).t().to(device)
 
-    t = benchmark.Timer(
-        stmt='torch.mm(lhs, rhs)',
-        globals={'lhs': rhs, 'rhs': lhs})
-    result = t.timeit(reps).median*1000
+    # t = benchmark.Timer(
+    #     stmt='torch.mm(lhs, rhs)',
+    #     globals={'lhs': rhs, 'rhs': lhs}).blocked_autorange()
+    # result = t.median*1000
+    times = []
+    torch.cuda.synchronize()
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+    for _ in range(burn_iters):
+        torch.matmul(lhs, rhs)
+    for _ in range(reps):
+        start.record()
+        torch.matmul(lhs, rhs)
+        end.record()
+        # Waits for everything to finish running
+        torch.cuda.synchronize()
+
+        times.append(start.elapsed_time(end))# millisecs
     del lhs
     del rhs
-    return result
+    return np.median(times)
 
 
-def pytorch_sparse_runtime(A, B, reps=REPS):
+def pytorch_sparse_runtime(A, B, reps=REPS, burn_iters=BURN_ITERS):
     """
     Given the sparse matrix A and dense matrix B return the runtime of the
     torch.sparse.mm function
@@ -108,8 +125,8 @@ def pytorch_sparse_runtime(A, B, reps=REPS):
 
     t = benchmark.Timer(
         stmt='torch.sparse.mm(lhs, rhs)',
-        globals={'lhs': lhs, 'rhs': rhs})
-    result = t.timeit(reps).median*1000
+        globals={'lhs': lhs, 'rhs': rhs}).blocked_autorange()
+    result = t.median*1000
     del lhs
     del rhs
     return result
