@@ -64,6 +64,15 @@ ENV LD_LIBRARY_PATH="/usr/local/sputnik/lib:${LD_LIBRARY_PATH}"
 #Setup cudnn
 RUN sh /mount/sgk/cudnn.sh
 
+#Setup MKL
+
+RUN wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB -O - | apt-key add -
+RUN echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list
+RUN add-apt-repository "deb https://apt.repos.intel.com/oneapi all main"
+RUN DEBIAN_FRONTEND="noninteractive"  apt install -y intel-mkl
+
+ENV LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu/mkl:${LD_LIBRARY_PATH}"
+
 #Setup Cusparse/Cublas
 RUN mkdir -p /mount/_c
 COPY ./_c /mount/_c
