@@ -20,7 +20,14 @@ ALL_RUNTIME = {
     "sgk_tf":runtime.sgk_sparse_runtime,
     "cuBLAS":runtime.cublas_runtime,
     "cuSPARSE":runtime.cusparse_runtime,
-    "sgk_op" :runtime.sgk_op_runtime
+    "sgk_op" :runtime.sgk_op_runtime,
+    "mkl": runtime.mkl_runtime
+}
+
+ALL_KERNEL = {
+    "cuBLAS":runtime.cublas_runtime,
+    "cuSPARSE":runtime.cusparse_runtime,
+    "sgk_op" :runtime.sgk_op_runtime,
 }
 def generate_line(keys,values,name):
     keys = np.array(list(keys))
@@ -41,7 +48,10 @@ def generate_line(keys,values,name):
 
 def experiment(arg):
     batch_size = BATCH_SIZE
-
+    if(arg.raw_kernel):
+        runtimes = ALL_KERNEL
+    else:
+        runtimes = ALL_RUNTIME
     if(not os.path.isdir(arg.output_path)):
         os.mkdir(arg.output_path)
     for subdir, dirs, files in os.walk(arg.input_path):
@@ -54,7 +64,7 @@ def experiment(arg):
                 sparsity = 1 - float(".".join(f.split(".")[:-1]))
                 A = mtx.load_from_mtx(f_path)
                 B =  np.random.randn(A.shape[1], batch_size).astype(np.float32)
-                for name, func in ALL_RUNTIME.items():
+                for name, func in runtimes.items():
                     res = func(A,B)
                     sub_res.setdefault(name,{})[sparsity]=res
             print("Generating graphs")    
@@ -81,5 +91,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input_path", help = "Data path",type=str, required=True)
     parser.add_argument("-o", "--output_path", help = "Output path",type=str, required=True)
+    parser.add_argument("-k", "--raw_kernel", help = "Output raw kernel",action='store_true')
     arg = parser.parse_args()
     experiment(arg)

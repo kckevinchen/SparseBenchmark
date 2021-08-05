@@ -1,18 +1,20 @@
 import time
-import numpy as np
-from scipy import sparse
 
-import torch
-import torch.utils.benchmark as benchmark
-
-
+# Must set variable prior to tensorflow
 import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-
-
 import tensorflow as tf
 import tensorflow.compat.v1 as tf1
+
+# Must load mkl prior to pytorch
+from mkl_helper.mkl_util import time_mkl_sparse_dense_matmul
+
+
+import torch
+import torch.utils.benchmark as benchmark
+import numpy as np
+from scipy import sparse
 
 from _c.cpp_lib import *
 from sgk.sparse import ops
@@ -24,8 +26,9 @@ from sgk.sparse import sparse_matrix
 tf1.disable_v2_behavior()
 
 REPS = 100
-
+MKL_REPS = 10
 BURN_ITERS = 10
+
 
 
 def tensorflow_runtime(A, B, reps=REPS, burn_iters=BURN_ITERS):
@@ -243,22 +246,35 @@ def sgk_op_runtime(A, B, reps=REPS, burn_iters=BURN_ITERS):
 	return np.median(times)*1e-6
 
 
+def mkl_runtime(A, B, reps=MKL_REPS, burn_iters=BURN_ITERS):
+	"""
+	Given the sparse matrix A and dense matrix B return the runtime of the 
+	sgk code (cpp code binded in python)
+	"""
+	A = sparse.csr_matrix(A)
+	times = []
+
+	for _ in range(reps):
+		times.append(time_mkl_sparse_dense_matmul(A,B))
+	return np.median(times)
+
 if __name__ == "__main__":
 
-	def gen_test_input(m, n, k, sparsity):
-		"""
-		return A as a sparse matrix and B as a dense
-		A is of shape (m, k)
-		B is of shape (k, n)
-		"""
-		sparse_A = sparse.random(
-			m, k, 1 - sparsity, format='csr', dtype=np.float32).toarray()
-		B = np.random.randn(k, n).astype(np.float32)
-		return sparse_A, B
-	m = 512
-	n = 1024
-	k = 512
+    def gen_test_input(m, n, k, sparsity):
+        """
+        return A as a sparse matrix and B as a dense
+        A is of shape (m, k)
+        B is of shape (k, n)
+        """
+        sparse_A = sparse.random(
+            m, k, 1 - sparsity, format='csr', dtype=np.float32)
+        B = np.random.randn(k, n).astype(np.float32)
+        return sparse_A, B
+    m = 512
+    n = 1024
+    k = 512
 
-	sparsity = 0.4
-	A, B = gen_test_input(m, n, k, sparsity)
-	print(sgk_op_runtime(A, B))
+    sparsity = 0.4
+    A, B = gen_test_input(m, n, k, sparsity)
+    print(mkl_runtime(A, B))
+    print(pytorch_runtime(A.toarray(), B))   
